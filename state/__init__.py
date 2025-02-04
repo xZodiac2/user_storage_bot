@@ -1,2 +1,3 @@
 from .user_id import *
-from .edit_resume import *
+from .resume import *
+from .user import *

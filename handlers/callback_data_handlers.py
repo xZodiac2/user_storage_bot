@@ -3,11 +3,11 @@ from aiogram.types import CallbackQuery
 
 from database import get_resume_by_id, Workload, ResumeUpdateModel, update_resume
 from handlers import router
-from res import edit_resume_kb, edit_resume_message, EditResumePrefixes, EditWorkloadPrefixes, SelectResumePrefixes, \
-    EditSkillsPrefixes
+from res import edit_resume_ikb, str_edit_resume_message, EditResumePrefixes, EditWorkloadPrefixes, SelectResumePrefixes, \
+    EditSkillsPrefixes, CreateResumeWorkloadPrefixes
 from core import parse_callback_data, CallbackPrefixFilter
-from res.keyboards.inline import edit_workload_kb, choice_skills_edit_mode_kb, edit_skills_remove_kb
-from state import EditResume
+from res.keyboards.inline import edit_workload_ikb, choice_skills_edit_mode_ikb, edit_skills_remove_ikb
+from state import EditResume, Resume
 
 
 @router.callback_query(CallbackPrefixFilter(SelectResumePrefixes.SELECT_RESUME.value))
@@ -25,8 +25,8 @@ async def on_resume_selected(callback: CallbackQuery, state: FSMContext):
     )
 
     await callback.message.answer(
-        text=edit_resume_message(resume.title, resume.workload.value, ", ".join(resume.get_skills())),
-        reply_markup=edit_resume_kb
+        text=str_edit_resume_message(resume.title, resume.workload.value, ", ".join(resume.get_skills())),
+        reply_markup=edit_resume_ikb
     )
     await callback.answer()
 
@@ -43,42 +43,26 @@ async def on_edit_title(callback: CallbackQuery, state: FSMContext):
 async def on_edit_workload(callback: CallbackQuery):
     await callback.message.edit_text(
         text="Выберите новую рабоучю нагрузку.",
-        reply_markup=edit_workload_kb
+        reply_markup=edit_workload_ikb
     )
     await callback.answer()
 
 
-@router.callback_query(CallbackPrefixFilter(EditWorkloadPrefixes.SET_WORKLOAD_FULL_TIME.value))
+@router.callback_query(CallbackPrefixFilter(EditWorkloadPrefixes.SET_WORKLOAD.value))
 async def on_set_workload_full_time(callback: CallbackQuery, state: FSMContext):
-    await state.update_data(workload=Workload.FULL_TIME.value)
+    data_builder = parse_callback_data(callback.data)
+    await state.update_data(workload=data_builder["type"])
     updated_resume = await state.get_data()
 
     await callback.message.edit_text(
-        text=edit_resume_message(
+        text=str_edit_resume_message(
             updated_resume["title"],
             updated_resume["workload"],
             ", ".join(updated_resume["skills"])
         ),
-        reply_markup=edit_resume_kb
+        reply_markup=edit_resume_ikb
     )
     await callback.answer()
-
-
-@router.callback_query(CallbackPrefixFilter(EditWorkloadPrefixes.SET_WORKLOAD_PART_TIME.value))
-async def on_set_workload_part_time(callback: CallbackQuery, state: FSMContext):
-    await state.update_data(workload=Workload.PART_TIME.value)
-    updated_resume = await state.get_data()
-
-    await callback.message.edit_text(
-        text=edit_resume_message(
-            updated_resume["title"],
-            updated_resume["workload"],
-            ", ".join(updated_resume["skills"])
-        ),
-        reply_markup=edit_resume_kb
-    )
-    await callback.answer()
-
 
 @router.callback_query(CallbackPrefixFilter(EditWorkloadPrefixes.BACK_TO_EDIT_RESUME.value))
 async def on_back_to_edit_resume(callback: CallbackQuery, state: FSMContext):
@@ -89,12 +73,12 @@ async def on_back_to_edit_resume(callback: CallbackQuery, state: FSMContext):
     updated_resume = await state.get_data()
 
     await callback.message.edit_text(
-        text=edit_resume_message(
+        text=str_edit_resume_message(
             updated_resume["title"],
             updated_resume["workload"],
             ", ".join(updated_resume["skills"])
         ),
-        reply_markup=edit_resume_kb
+        reply_markup=edit_resume_ikb
     )
     await callback.answer()
 
@@ -103,7 +87,7 @@ async def on_back_to_edit_resume(callback: CallbackQuery, state: FSMContext):
 async def on_edit_skills(callback: CallbackQuery):
     await callback.message.edit_text(
         text="Выберите действие",
-        reply_markup=choice_skills_edit_mode_kb
+        reply_markup=choice_skills_edit_mode_ikb
     )
     await callback.answer()
 
@@ -122,7 +106,7 @@ async def on_edit_skills_remove(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(
         text="Выберите скллы для удаления",
-        reply_markup=edit_skills_remove_kb(resume["skills"], [])
+        reply_markup=edit_skills_remove_ikb(resume["skills"], [])
     )
     await callback.answer()
 
@@ -133,13 +117,16 @@ async def on_remove_skill(callback: CallbackQuery, state: FSMContext):
     skill_to_delete = data_builder["skill"]
 
     resume = await state.get_data()
-    skills = resume["skills"]
-    will_remove_skills = resume["will_remove_skills"] + [skill_to_delete]
+    will_remove_skills = resume["will_remove_skills"]
+    if skill_to_delete in will_remove_skills:
+        will_remove_skills.remove(skill_to_delete)
+    else:
+        will_remove_skills.append(skill_to_delete)
     await state.update_data(will_remove_skills=will_remove_skills)
 
     await callback.message.edit_text(
         text="Выберите скллы для удаления",
-        reply_markup=edit_skills_remove_kb(skills, will_remove_skills)
+        reply_markup=edit_skills_remove_ikb(resume["skills"], will_remove_skills)
     )
 
     await callback.answer()
@@ -154,12 +141,12 @@ async def on_save_skill_changes(callback: CallbackQuery, state: FSMContext):
     await state.update_data(skills=skills, will_remove_skills=[])
 
     await callback.message.edit_text(
-        text=edit_resume_message(
+        text=str_edit_resume_message(
             updated_resume["title"],
             updated_resume["workload"],
             ", ".join(updated_resume["skills"])
         ),
-        reply_markup=edit_resume_kb
+        reply_markup=edit_resume_ikb
     )
     await callback.answer()
 
@@ -177,5 +164,15 @@ async def on_save_resume_changes(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text("Изменения сохранены!")
     await callback.answer()
 
+@router.callback_query(CallbackPrefixFilter(CreateResumeWorkloadPrefixes.SELECT_WORKLOAD.value))
+async def on_create_resume_workload_full_time(callback: CallbackQuery, state: FSMContext):
+    data_builder = parse_callback_data(callback.data)
+    await state.update_data(workload=data_builder["type"])
+    await state.set_state(Resume.skills)
 
-
+    await callback.message.edit_text(
+        text=f"Выбран {Workload.value_of(data_builder["type"]).value}",
+        reply_markup=None
+    )
+    await callback.message.answer("Теперь введите скиллы через запятую. Пример: Python, aiogram, SQLAlchemy")
+    await callback.answer()

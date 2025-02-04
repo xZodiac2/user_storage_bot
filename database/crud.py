@@ -11,11 +11,13 @@ async def insert_user(user: UserOrm):
     async with get_session() as session:
         session.add(user)
         await session.commit()
+        await session.refresh(user)
 
 async def insert_resume(resume: ResumeOrm):
     async with get_session() as session:
         session.add(resume)
         await session.commit()
+        await session.refresh(resume)
 
 
 async def get_all_users() -> list[UserOrm]:

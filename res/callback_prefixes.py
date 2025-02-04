@@ -10,8 +10,7 @@ class EditResumePrefixes(Enum):
     SAVE_RESUME_CHANGES = "save_resume_changes"
 
 class EditWorkloadPrefixes(Enum):
-    SET_WORKLOAD_PART_TIME = "set_workload_part_time"
-    SET_WORKLOAD_FULL_TIME = "set_workload_full_time"
+    SET_WORKLOAD = "set_workload"
     BACK_TO_EDIT_RESUME = "back_to_edit_resume"
 
 class EditSkillsPrefixes(Enum):
@@ -20,3 +19,6 @@ class EditSkillsPrefixes(Enum):
     REMOVE_SKILL = "remove_skill"
     SAVE_CHANGES = "save_skill_changes"
     BACK_TO_EDIT_RESUME = "back_to_edit_resume"
+
+class CreateResumeWorkloadPrefixes(Enum):
+    SELECT_WORKLOAD = "select_workload_part_time"

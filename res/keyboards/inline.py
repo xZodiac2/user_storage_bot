@@ -1,9 +1,11 @@
-from res import EditResumePrefixes, EditWorkloadPrefixes, SelectResumePrefixes, EditSkillsPrefixes
+from database import Workload
+from res import EditResumePrefixes, EditWorkloadPrefixes, SelectResumePrefixes, EditSkillsPrefixes, \
+    CreateResumeWorkloadPrefixes
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from core import callback_data
 
 
-def select_resume_kb(resumes):
+def select_resume_ikb(resumes):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text=resume.title,
@@ -11,7 +13,7 @@ def select_resume_kb(resumes):
         )] for resume in resumes
     ])
 
-edit_resume_kb = InlineKeyboardMarkup(inline_keyboard=[
+edit_resume_ikb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(
         text="Изменить название ✏️",
         callback_data=callback_data(EditResumePrefixes.EDIT_TITLE.value)
@@ -30,14 +32,14 @@ edit_resume_kb = InlineKeyboardMarkup(inline_keyboard=[
     )]
 ])
 
-edit_workload_kb = InlineKeyboardMarkup(inline_keyboard=[
+edit_workload_ikb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(
         text="Part time",
-        callback_data=callback_data(EditWorkloadPrefixes.SET_WORKLOAD_PART_TIME.value)
+        callback_data=callback_data(EditWorkloadPrefixes.SET_WORKLOAD.value, type=Workload.PART_TIME.value),
     )],
     [InlineKeyboardButton(
         text="Full time",
-        callback_data=callback_data(EditWorkloadPrefixes.SET_WORKLOAD_FULL_TIME.value)
+        callback_data=callback_data(EditWorkloadPrefixes.SET_WORKLOAD.value, type=Workload.FULL_TIME.value),
     )],
     [InlineKeyboardButton(
         text="Назад 🔙",
@@ -45,7 +47,7 @@ edit_workload_kb = InlineKeyboardMarkup(inline_keyboard=[
     )]
 ])
 
-choice_skills_edit_mode_kb = InlineKeyboardMarkup(inline_keyboard=[
+choice_skills_edit_mode_ikb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(
         text="Добавить ➕",
         callback_data=callback_data(EditSkillsPrefixes.CHOOSE_ADD.value)
@@ -61,7 +63,7 @@ choice_skills_edit_mode_kb = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 
-def edit_skills_remove_kb(skills, will_remove_skills):
+def edit_skills_remove_ikb(skills, will_remove_skills):
     kb = [
         [InlineKeyboardButton(
             text=skill + (" ✅" if skill in will_remove_skills else " ❌"),
@@ -77,3 +79,14 @@ def edit_skills_remove_kb(skills, will_remove_skills):
         callback_data=callback_data(EditSkillsPrefixes.BACK_TO_EDIT_RESUME.value, rollback_state=True)
     )])
     return InlineKeyboardMarkup(inline_keyboard=kb)
+
+create_resume_select_workload_ikb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(
+        text="Part time",
+        callback_data=callback_data(CreateResumeWorkloadPrefixes.SELECT_WORKLOAD.value, type=Workload.PART_TIME.value),
+    )],
+    [InlineKeyboardButton(
+        text="Full time",
+        callback_data=callback_data(CreateResumeWorkloadPrefixes.SELECT_WORKLOAD.value, type=Workload.FULL_TIME.value)
+    )]
+])
